@@ -10,7 +10,7 @@ class MircoDataset():
     def __init__(self):
         config = Config()
         self.lens = config.datalen
-        self.test_pair = config.test_path
+        self.test_path = config.test_path
         self.train_path = config.train_path # 训练数据集读取的地方
         self.negative_num = config.negative_num # 训练过程中的 negative num
         self.hash_tag_num = config.hashtag_num
@@ -76,21 +76,21 @@ class MircoDataset():
 
     # get test data
     def getTestBatch(self):
-
-        video_id_input, true_hash_tag = self.get_test_instances(self.train_path)
+        video_id_input, v2h_dict = self.get_test_instances(self.test_path)
         sindex = 0
         eindex = 1 # count one by one
 
         hash_tag_list = [str(i) for i in range(self.hash_tag_num)]
         all_tag_feature = self.getBatchTopicDataById(hash_tag_list) # get all hash tag topic feature
 
-        while eindex <= len(video_id_input):
+        while eindex < len(video_id_input):
             main_batch = video_id_input[sindex:eindex] * self.hash_tag_num
+            true_label = v2h_dict[main_batch[0]]
             img_feature, audio_feature, text_feature = self.getBatchDataById(main_batch)
-            true_label = true_hash_tag[sindex:eindex] #
             temp = eindex
-            eindex = eindex + batch_size
+            eindex = eindex + 1
             sindex = temp
+            print(eindex)
             yield img_feature, audio_feature, text_feature, all_tag_feature, true_label
 
 
@@ -102,18 +102,20 @@ class MircoDataset():
         :param hash_tag_num: int
         :return:
         """
-        video_id_input, true_hash_tag = [], [] # string list
+        video_id_input = [] # string list
+        t_dict = {}
         with open(test_path, 'r') as fr:
             line = fr.readline()
             while line != None and line != "":
                 arr = line.strip().split(":")
-                video_id = arr[0]
-                t_tag = arr[1]
-                video_id_input.append(video_id)
-                true_hash_tag.append(int(t_tag)) # true label will be int
+                video_id_input.append(arr[0])
+                if arr[0] in t_dict:
+                    t_dict[arr[0]].append(int(arr[1]))
+                else:
+                    t_dict[arr[0]] = [int(arr[1])]
                 # read the next line
                 line = fr.readline()
-        return video_id_input, true_hash_tag
+        return video_id_input, t_dict
 
     def get_train_instances(self, train_path, negative_num):
         """

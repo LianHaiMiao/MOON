@@ -22,7 +22,7 @@ class Config(object):
 
         # extra topic data
         self.topic_path = './data/topic_data.hdf5'
-        # train and test data path
+        # train and test data path for tagging model
         self.train_path = './data/v1_train_data.txt'
         self.test_path = './data/v1_test_data.txt'
         self.v2h = './data/train_test_dataset.txt'

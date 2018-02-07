@@ -11,6 +11,7 @@ from dataset import MircoDataset
 from torch.utils.data import DataLoader
 import torch.optim as optim
 import time
+import numpy as np
 
 # presentation loss
 def p_loss_fn(modal_i, modal_a, modal_t):
@@ -123,14 +124,17 @@ def train_tagging_model(config, helper, moon, tag_model, mdataset):
     print("Done the train of tagging model")
     return True
 
-def evaluation_model():
+def evaluation_model(config, helper, moon, tag_model, mdataset):
 
     tag_model.eval()
+
+    p_score = []
+    r_score = []
 
     # eval one by one
     for i, (i_data, a_data, t_data, all_tat_feature, true_label) in enumerate(mdataset.getTestBatch()):
 
-        i_data = helper.to_var(i_data, config.use_gpu)  # batch*common_size
+        i_data = helper.to_var(i_data, config.use_gpu)  # hash_tag_num*common_size
         a_data = helper.to_var(a_data, config.use_gpu)
         t_data = helper.to_var(t_data, config.use_gpu)
 
@@ -141,8 +145,17 @@ def evaluation_model():
 
         prediction = tag_model(i_data, a_data, t_data, all_tat_feature)
 
+        prediction = torch.squeeze(prediction, 1)
 
+        p_score.append(helper.count_precision(prediction.data.cpu().numpy(), true_label, config.topk))
+        r_score.append(helper.count_recall(prediction.data.cpu().numpy(), true_label, config.topk))
 
+    precision = np.mean(p_score)
+    recall = np.mean(r_score)
+
+    print("precision is:", precision)
+
+    print("recall is:", recall)
 
 
 if __name__ == '__main__':
@@ -163,18 +176,19 @@ if __name__ == '__main__':
     # for i, (i_data, a_data, t_data) in enumerate(mdataset.presentationTrain(config.batch_size)):
 
     mdataset = MircoDataset()
+
     # train presentation model
     # train_presentation_model(config, helper, moon, mdataset)
 
-    # train tagging model
+    # initial tagging model
     tag_model = Tagging(config.tagging_size)
 
     if config.use_gpu:
         tag_model = tag_model.cuda()
-
-    train_tagging_model(config, helper, moon, tag_model, mdataset)
+    # train tagging model
+    # train_tagging_model(config, helper, moon, tag_model, mdataset)
 
     # evaluation
-    # 我们可以训练完之后直接进行测试，也可以每次训练的时候进行测试，都可以。
-
+    # 我们可以训练完之后直接进行测试，也可以每次训练的时候进行测试，都可以
+    evaluation_model(config, helper, moon, tag_model, mdataset)
 

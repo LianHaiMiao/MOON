@@ -1,8 +1,7 @@
 import torch
 from torch.autograd import Variable
 import numpy as np
-import math
-import heapq
+
 
 class Helper(object):
     """
@@ -30,4 +29,30 @@ class Helper(object):
             x = x.cuda()
         return x
 
-    def eval_one_rating(self):
+    def count_precision(self, pred_y, true_label, k=1):
+        ranklist = self.get_rank_list(pred_y, k)
+        count = 0
+        for j in ranklist:
+            if j in true_label:
+                count += 1
+        p = float(count) / float(k)
+        return p
+
+
+    def count_recall(self, pred_y, true_label, k=1):
+        ranklist = self.get_rank_list(pred_y, k)
+        count = 0
+        for j in ranklist:
+            if j in true_label:
+                count += 1
+        r = float(count) / float(len(true_label))
+
+        return r
+
+
+    def get_rank_list(self, pred_y, k):
+        temp = np.argsort(pred_y)
+        ranklist = temp[-k:]
+        return ranklist
+
+
