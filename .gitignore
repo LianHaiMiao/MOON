@@ -1,5 +1,8 @@
 *.pkl
 *.zip
+*.hdf5
 test.py
 data/
 .idea/
+bestmodel/
+tagmodel/
