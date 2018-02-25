@@ -9,9 +9,9 @@ class MOON(nn.Module):
         self.alstm = AudioLSTM(au_in, au_h)
         self.tlstm = TextLSTM(text_in, text_h)
         # map into the common space
-        self.ilinear = nn.Linear(img_h, common_size)
-        self.alinear = nn.Linear(au_h, common_size)
-        self.tlinear = nn.Linear(text_h, common_size)
+        self.ilinear = MLP(img_h, common_size)
+        self.alinear = MLP(au_h, common_size)
+        self.tlinear = MLP(text_h, common_size)
 
     def forward(self, image, audio, text):
         # lstm + attention
@@ -73,9 +73,6 @@ class TextLSTM(nn.Module):
         sum_h = torch.sum(h, 1) # sum_h:[batch*feature]
         return sum_h
 
-
-
-
 # attention layer
 class AttentionNet(nn.Module):
     def __init__(self, input_size):
@@ -91,3 +88,23 @@ class AttentionNet(nn.Module):
     def forward(self, x):
         out = self.linear(x)
         return out
+
+# multi-layer perceptron
+class MLP(nn.Module):
+    def __init__(self, input_size, common_size):
+        super(MLP, self).__init__()
+        self.linear = nn.Sequential(
+            nn.Linear(input_size, input_size // 2),
+            nn.ReLU(),
+            nn.Linear(input_size // 2, input_size // 4),
+            nn.ReLU(),
+            nn.Linear(input_size // 4, common_size)
+        )
+
+    def forward(self, x):
+        out = self.linear(x)
+        return out
+
+
+
+

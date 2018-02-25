@@ -173,7 +173,7 @@ if __name__ == '__main__':
     if config.use_gpu:
         moon = moon.cuda()
 
-    # for i, (i_data, a_data, t_data) in enumerate(mdataset.presentationTrain(config.batch_size)):
+    # 数据初始化
 
     mdataset = MircoDataset()
 

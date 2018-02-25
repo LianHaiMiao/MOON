@@ -45,7 +45,7 @@ class MircoDataset():
     # get train data
     def getTrainBatch(self, batch_size):
         """
-        :param batch_size:
+        :param batch_size: int
         :return:  img_feature, audio_feature, text_feature (Tensor)
         """
         video_id_input, pos_tag_input, neg_tag_input = self.get_train_instances(self.train_path, self.negative_num)
@@ -189,5 +189,7 @@ class MircoDataset():
     def __len__(self):
         return self.lens
 
+
+    
 
 
