@@ -43,7 +43,10 @@ class Config(object):
         self.presentation_epoch = 10
 
         # tagging model
-        self.tagging_size = self.common_size * 4
+
+        self.embed_size = self.common_size * 3
+
+        self.tagging_size = self.common_size * 6
 
         self.negative_num = 4
 
@@ -51,6 +54,6 @@ class Config(object):
 
         self.tagging_epoch = 30
 
-        self.tagging_lr = 0.001
+        self.tagging_lr = 0.05
 
 

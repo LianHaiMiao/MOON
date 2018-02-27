@@ -29,9 +29,14 @@ class Helper(object):
             x = x.cuda()
         return x
 
+    def expend(self, data, hashtag_num):
+        return data.view(data.data.size()[0], 1, data.data.size()[1]).expand(data.data.size()[0], hashtag_num, data.data.size()[1])
+
+
     def count_precision(self, pred_y, true_label, k=1):
-        ranklist = self.get_rank_list(pred_y, k)
+        value, ranklist = torch.topk(pred_y, k)
         count = 0
+        ranklist = ranklist.cpu().numpy()
         for j in ranklist:
             if j in true_label:
                 count += 1
@@ -40,19 +45,19 @@ class Helper(object):
 
 
     def count_recall(self, pred_y, true_label, k=1):
-        ranklist = self.get_rank_list(pred_y, k)
+        value, ranklist = torch.topk(pred_y, k)
         count = 0
+        ranklist = ranklist.cpu().numpy()
         for j in ranklist:
             if j in true_label:
                 count += 1
         r = float(count) / float(len(true_label))
-
         return r
 
 
-    def get_rank_list(self, pred_y, k):
-        temp = np.argsort(pred_y)
-        ranklist = temp[-k:]
-        return ranklist
+    # def get_rank_list(self, pred_y, k):
+    #     temp = np.argsort(pred_y)
+    #     ranklist = temp[-k:]
+    #     return ranklist
 
 

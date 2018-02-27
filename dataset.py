@@ -11,14 +11,13 @@ class MircoDataset():
         config = Config()
         self.lens = config.datalen
         self.test_path = config.test_path
-        self.train_path = config.train_path # 训练数据集读取的地方
-        self.negative_num = config.negative_num # 训练过程中的 negative num
+        self.train_path = config.train_path  # 训练数据集读取的地方
+        self.negative_num = config.negative_num  # 训练过程中的 negative num
         self.hash_tag_num = config.hashtag_num
         self.v2h_list = self.readDict(config.v2h)
         self.img_data = h5py.File(config.image_path, 'r')
         self.audio_data = h5py.File(config.audio_path, 'r')
         self.text_data = h5py.File(config.text_path, 'r')
-        self.topic_data = h5py.File(config.topic_path, 'r')
 
     def presentationTrain(self, batch_size):
         """
@@ -57,9 +56,9 @@ class MircoDataset():
             neg_batch = neg_tag_input[sindex:eindex]
             # get the main feature
             img_feature, audio_feature, text_feature = self.getBatchDataById(main_batch)
-            # get topic feature
-            pos_topic_feature = self.getBatchTopicDataById(pos_batch)
-            neg_topic_feature = self.getBatchTopicDataById(neg_batch)
+            # get tag id
+            pos_topic_feature = [int(j) for j in pos_batch]
+            neg_topic_feature = [int(j) for j in neg_batch]
             temp = eindex
             eindex = eindex + batch_size
             sindex = temp
@@ -70,29 +69,31 @@ class MircoDataset():
             pos_batch = pos_tag_input[sindex:]
             neg_batch = neg_tag_input[sindex:]
             img_feature, audio_feature, text_feature = self.getBatchDataById(main_batch)
-            pos_topic_feature = self.getBatchTopicDataById(pos_batch)
-            neg_topic_feature = self.getBatchTopicDataById(neg_batch)
+            pos_topic_feature = [int(j) for j in pos_batch]
+            neg_topic_feature = [int(j) for j in neg_batch]
             yield img_feature, audio_feature, text_feature, pos_topic_feature, neg_topic_feature
 
-    # get test data
-    def getTestBatch(self):
+    # get test data to evaluate
+    def getTestBatch(self, batch_size):
         video_id_input, v2h_dict = self.get_test_instances(self.test_path)
         sindex = 0
-        eindex = 1 # count one by one
-
-        hash_tag_list = [str(i) for i in range(self.hash_tag_num)]
-        all_tag_feature = self.getBatchTopicDataById(hash_tag_list) # get all hash tag topic feature
+        eindex = batch_size # count one by one
+        hash_tag_list = [int(i) for i in range(self.hash_tag_num)]  # get all hash tag id
 
         while eindex < len(video_id_input):
-            main_batch = video_id_input[sindex:eindex] * self.hash_tag_num
-            true_label = v2h_dict[main_batch[0]]
+            main_batch = video_id_input[sindex:eindex]  # get the video id
+            true_label = [v2h_dict[l] for l in main_batch]
             img_feature, audio_feature, text_feature = self.getBatchDataById(main_batch)
             temp = eindex
-            eindex = eindex + 1
+            eindex = eindex + batch_size
             sindex = temp
-            print(eindex)
-            yield img_feature, audio_feature, text_feature, all_tag_feature, true_label
+            yield img_feature, audio_feature, text_feature, hash_tag_list, true_label
 
+        if eindex >= len(video_id_input):
+            main_batch = video_id_input[sindex:]  # get the video id
+            true_label = [v2h_dict[l] for l in main_batch]
+            img_feature, audio_feature, text_feature = self.getBatchDataById(main_batch)
+            yield img_feature, audio_feature, text_feature, hash_tag_list, true_label
 
     # construct test data
     def get_test_instances(self, test_path):
@@ -102,7 +103,7 @@ class MircoDataset():
         :param hash_tag_num: int
         :return:
         """
-        video_id_input = [] # string list
+        video_id_input = []  # string list
         t_dict = {}
         with open(test_path, 'r') as fr:
             line = fr.readline()
@@ -124,7 +125,7 @@ class MircoDataset():
         :param negtive_num: int
         :return:
         """
-        video_id_input, pos_tag_input, neg_tag_input = [], [], [] # string list
+        video_id_input, pos_tag_input, neg_tag_input = [], [], []  # string list
         with open(train_path, 'r') as fr:
             line = fr.readline()
             while line != None and line != "":
@@ -176,20 +177,10 @@ class MircoDataset():
         text_feature = torch.stack(t_fe, dim=0)
         return img_feature, audio_feature, text_feature
 
-    def getBatchTopicDataById(self, batch):
-        """
-        :param batch: String list
-        :return: topic_feature
-        """
-        fe = []
-        for key in batch:
-            fe.append(torch.from_numpy(self.topic_data[key].value))
-        return torch.stack(fe, dim=0)
-
     def __len__(self):
         return self.lens
 
 
-    
+
 
 
