@@ -98,7 +98,8 @@ class MLP(nn.Module):
             nn.ReLU(),
             nn.Linear(input_size // 2, input_size // 4),
             nn.ReLU(),
-            nn.Linear(input_size // 4, common_size)
+            nn.Linear(input_size // 4, common_size),
+            nn.BatchNorm1d(common_size)
         )
 
     def forward(self, x):

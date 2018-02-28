@@ -155,6 +155,7 @@ def evaluation_model(config, helper, moon, tag_model, mdataset):
     p_score = []
     r_score = []
 
+    print("对模型进行评估咯～")
     # eval one by one
     for i, (i_data, a_data, t_data, all_tag, true_label) in enumerate(mdataset.getTestBatch(config.batch_size)):
 
@@ -185,7 +186,7 @@ def evaluation_model(config, helper, moon, tag_model, mdataset):
         # torch.topk
         temp_count = 0
         for true_l in true_label:
-            p_score.append(helpe1r.count_precision(prediction.data[temp_count], true_l, config.topk))
+            p_score.append(helper.count_precision(prediction.data[temp_count], true_l, config.topk))
             r_score.append(helper.count_recall(prediction.data[temp_count], true_l, config.topk))
             temp_count += 1
 
