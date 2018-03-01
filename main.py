@@ -66,16 +66,19 @@ def train_presentation_model(config, helper, moon, mdataset):
             config.presentation_lr /= 3
             optimizer = torch.optim.Adam(moon.parameters(), lr=config.presentation_lr)
 
-    print("Done the train of presentation model")
-
     return True
 
 
 def train_tagging_model(config, helper, moon, tag_model, mdataset):
     # define optimizer
-    optimizer = optim.Adam(tag_model.parameters(), config.tagging_lr)
+    # optimizer = optim.Adam(tag_model.parameters(), config.tagging_lr)
+    optimizer1 = optim.RMSprop(tag_model.parameters(), config.tagging_lr)
+    optimizer2 = optim.RMSprop(moon.parameters(), config.presentation_lr)
 
     tag_model.train()
+    moon.train()
+
+    print("开始训练 hash tag model")
 
     for epoch in range(config.tagging_epoch):
 
@@ -97,7 +100,9 @@ def train_tagging_model(config, helper, moon, tag_model, mdataset):
             p_topic = helper.to_var(torch.LongTensor(p_topic), config.use_gpu)
             n_topic = helper.to_var(torch.LongTensor(n_topic), config.use_gpu)
 
-            optimizer.zero_grad()
+            # optimizer.zero_grad()
+            optimizer1.zero_grad()
+            optimizer2.zero_grad()
 
             pos_prediction = tag_model(i_data, a_data, t_data, p_topic)
             pos_taget = helper.to_var(torch.from_numpy(np.ones((pos_prediction.data.size())).astype(np.float32)), config.use_gpu)
@@ -116,7 +121,10 @@ def train_tagging_model(config, helper, moon, tag_model, mdataset):
             total_loss += loss.data[0]
 
             loss.backward()
-            optimizer.step()
+            # optimizer.step()
+
+            optimizer1.step()
+            optimizer2.step()
 
         # end a epoch
         print('the loss of model Epoch[%d / %d]: is %.4f , time: %d s' % (epoch, config.tagging_epoch, total_loss, time.time() - begin_time))
@@ -141,9 +149,6 @@ def train_tagging_model(config, helper, moon, tag_model, mdataset):
             config.tagging_lr /= 3
             optimizer = optim.Adam(tag_model.parameters(), config.tagging_lr)
 
-
-
-
     print("Done the train of tagging model")
     return True
 
@@ -151,9 +156,11 @@ def evaluation_model(config, helper, moon, tag_model, mdataset):
     begin_time = time.time()
 
     tag_model.eval()
+    moon.eval()
 
     p_score = []
     r_score = []
+    NDCG_score = []
 
     print("对模型进行评估咯～")
     # eval one by one
@@ -188,10 +195,12 @@ def evaluation_model(config, helper, moon, tag_model, mdataset):
         for true_l in true_label:
             p_score.append(helper.count_precision(prediction.data[temp_count], true_l, config.topk))
             r_score.append(helper.count_recall(prediction.data[temp_count], true_l, config.topk))
+            NDCG_score.append(helper.count_NDCG(prediction.data[temp_count], true_l, config.topk))
             temp_count += 1
 
     precision = np.mean(p_score)
     recall = np.mean(r_score)
+    NDCG = np.mean(NDCG_score)
 
     print('time consume %d s' % (time.time() - begin_time))
 
@@ -199,6 +208,7 @@ def evaluation_model(config, helper, moon, tag_model, mdataset):
 
     print("recall is:", recall)
 
+    print("NDCG is:", NDCG)
 
 if __name__ == '__main__':
 
@@ -220,22 +230,24 @@ if __name__ == '__main__':
 
     print("数据、模型初步构建完成")
 
-    # train presentation model
-    train_presentation_model(config, helper, moon, mdataset)
-
-    # after train, we should choose the best one as the presentation model
-    #
-    #
-
     # initial tagging model
     tag_model = Tagging(config.tagging_size, config.hashtag_num, config.embed_size)
-
     if config.use_gpu:
         tag_model = tag_model.cuda()
 
-    print("开始训练 hash tag model")
-    # train tagging model
-    train_tagging_model(config, helper, moon, tag_model, mdataset)
+
+
+    for i in range(config.all_epoch):
+
+        print("第" + str(i+1) + "次训练")
+
+        # train presentation model
+        train_presentation_model(config, helper, moon, mdataset)
+
+        # after train, we should choose the best one as the presentation model
+        # train tagging model
+        train_tagging_model(config, helper, moon, tag_model, mdataset)
+        print("----------------------------------------")
 
     # evaluation
     # 我们可以训练完之后直接进行测试，也可以每次训练的时候进行测试，都可以

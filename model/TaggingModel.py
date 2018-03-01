@@ -21,9 +21,11 @@ class Tagging(nn.Module):
         topic_data = self.tag_embed(tag_id)
 
         if len(topic_data.data.size()) == 2:
-            x = torch.cat((i_data, a_data, t_data, topic_data), dim=1)  # for train
+            # for train
+            x = torch.cat((torch.mul(i_data, topic_data), torch.mul(a_data, topic_data), torch.mul(t_data, topic_data)), dim=1)
         else:
-            x = torch.cat((i_data, a_data, t_data, topic_data), dim=2)  # for evaluation
-
+            # x = torch.cat((i_data, a_data, t_data, topic_data), dim=2)  # for evaluation
+            # for evaluation
+            x = torch.cat((torch.mul(i_data, topic_data), torch.mul(a_data, topic_data), torch.mul(t_data, topic_data)), dim=2)
         out = F.sigmoid(self.predict(x))
         return out

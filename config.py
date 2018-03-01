@@ -30,6 +30,8 @@ class Config(object):
         self.datalen = 27911 # video number
         self.hashtag_num = 503 #hash tag number
 
+        self.all_epoch = 20
+
         # the parameters we need to change is following:
         #
         #
@@ -38,22 +40,22 @@ class Config(object):
 
         self.use_gpu = True
 
-        self.presentation_lr = 0.001
+        self.presentation_lr = 0.0001
 
-        self.presentation_epoch = 10
+        self.presentation_epoch = 2
 
         # tagging model
 
-        self.embed_size = self.common_size * 3
+        self.embed_size = self.common_size
 
-        self.tagging_size = self.common_size * 6
+        self.tagging_size = self.common_size * 3
 
         self.negative_num = 4
 
-        self.topk = 10
+        self.topk = 20
 
-        self.tagging_epoch = 30
+        self.tagging_epoch = 5
 
-        self.tagging_lr = 0.05
+        self.tagging_lr = 0.0005
 
 

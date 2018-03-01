@@ -1,7 +1,7 @@
 import torch
 from torch.autograd import Variable
 import numpy as np
-
+import math
 
 class Helper(object):
     """
@@ -53,6 +53,16 @@ class Helper(object):
                 count += 1
         r = float(count) / float(len(true_label))
         return r
+
+    def count_NDCG(self, pred_y, true_label, k=1):
+        value, ranklist = torch.topk(pred_y, k)
+        count = 1
+        ranklist = ranklist.cpu().numpy()
+        for j in ranklist:
+            if j in true_label:
+                return math.log(2) / math.log(count + 1)
+            count += 1
+        return 0
 
 
     # def get_rank_list(self, pred_y, k):
