@@ -18,6 +18,7 @@ class Tagging(nn.Module):
     def forward(self, i_data, a_data, t_data, tag_id):
         # i_data: batch*common_size
         # we should concatenate the data
+
         topic_data = self.tag_embed(tag_id)
 
         if len(topic_data.data.size()) == 2:

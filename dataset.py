@@ -18,6 +18,9 @@ class MircoDataset():
         self.img_data = h5py.File(config.image_path, 'r')
         self.audio_data = h5py.File(config.audio_path, 'r')
         self.text_data = h5py.File(config.text_path, 'r')
+        self.t_v_id_input, self.t_p_tag_input, self.t_n_tag_input = self.get_train_instances(self.train_path, self.negative_num)
+        self.test_video_id_input, self.test_v2h_dict = self.get_test_instances(self.test_path)
+
 
     def presentationTrain(self, batch_size):
         """
@@ -47,7 +50,7 @@ class MircoDataset():
         :param batch_size: int
         :return:  img_feature, audio_feature, text_feature (Tensor)
         """
-        video_id_input, pos_tag_input, neg_tag_input = self.get_train_instances(self.train_path, self.negative_num)
+        video_id_input, pos_tag_input, neg_tag_input = self.t_v_id_input, self.t_p_tag_input, self.t_n_tag_input
         sindex = 0
         eindex = batch_size
         while eindex < len(video_id_input):
@@ -75,9 +78,9 @@ class MircoDataset():
 
     # get test data to evaluate
     def getTestBatch(self, batch_size):
-        video_id_input, v2h_dict = self.get_test_instances(self.test_path)
+        video_id_input, v2h_dict = self.test_video_id_input, self.test_v2h_dict
         sindex = 0
-        eindex = batch_size # count one by one
+        eindex = batch_size # count by batch
         hash_tag_list = [int(i) for i in range(self.hash_tag_num)]  # get all hash tag id
 
         while eindex < len(video_id_input):
@@ -116,7 +119,8 @@ class MircoDataset():
                     t_dict[arr[0]] = [int(arr[1])]
                 # read the next line
                 line = fr.readline()
-        return video_id_input, t_dict
+        video_id_set = list(set(video_id_input))
+        return video_id_set, t_dict
 
     def get_train_instances(self, train_path, negative_num):
         """

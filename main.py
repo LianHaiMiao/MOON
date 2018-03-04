@@ -34,7 +34,7 @@ def train_presentation_model(config, helper, moon, mdataset):
 
         begin_time = time.time()
 
-        for i, (i_data, a_data, t_data) in enumerate(mdataset.presentationTrain(config.batch_size)):
+        for i, (i_data, a_data, t_data) in enumerate(mdataset.presentationTrain(config.train_batch_size)):
             i_data = helper.to_var(i_data, config.use_gpu) # batch*seq*feature
             a_data = helper.to_var(a_data, config.use_gpu) # batch*seq*feature
             t_data = helper.to_var(t_data, config.use_gpu) # batch*seq*feature
@@ -86,7 +86,7 @@ def train_tagging_model(config, helper, moon, tag_model, mdataset):
 
         begin_time = time.time()
 
-        for i, (i_data, a_data, t_data, p_topic, n_topic) in enumerate(mdataset.getTrainBatch(config.batch_size)):
+        for i, (i_data, a_data, t_data, p_topic, n_topic) in enumerate(mdataset.getTrainBatch(config.train_batch_size)):
 
             i_data = helper.to_var(i_data, config.use_gpu) # batch*seq*feature
             a_data = helper.to_var(a_data, config.use_gpu)
@@ -147,7 +147,8 @@ def train_tagging_model(config, helper, moon, tag_model, mdataset):
         # Decaying Learning Rate
         if (epoch + 1) % 5 == 0:
             config.tagging_lr /= 3
-            optimizer = optim.Adam(tag_model.parameters(), config.tagging_lr)
+            optimizer1 = optim.Adam(tag_model.parameters(), config.tagging_lr)
+            optimizer2 = optim.Adam(moon.parameters(), config.presentation_lr)
 
     print("Done the train of tagging model")
     return True
@@ -164,7 +165,7 @@ def evaluation_model(config, helper, moon, tag_model, mdataset):
 
     print("对模型进行评估咯～")
     # eval one by one
-    for i, (i_data, a_data, t_data, all_tag, true_label) in enumerate(mdataset.getTestBatch(config.batch_size)):
+    for i, (i_data, a_data, t_data, all_tag, true_label) in enumerate(mdataset.getTestBatch(config.test_batch_size)):
 
         i_data = helper.to_var(i_data, config.use_gpu)
         a_data = helper.to_var(a_data, config.use_gpu)  # batch*seq*feature
@@ -185,7 +186,6 @@ def evaluation_model(config, helper, moon, tag_model, mdataset):
         all_tag_data = helper.to_var(all_tag2, config.use_gpu)  # batch*hashtag_num
 
         # loop the data
-
         prediction = tag_model(i_data, a_data, t_data, all_tag_data)
 
         prediction = torch.squeeze(prediction, 2)  # batch*hashtag_num
@@ -225,10 +225,11 @@ if __name__ == '__main__':
     if config.use_gpu:
         moon = moon.cuda()
 
+    data_begin_time = time.time()
     # 数据初始化
     mdataset = MircoDataset()
 
-    print("数据、模型初步构建完成")
+    print("数据、模型初步构建完成花费 %d s" , time.time()-data_begin_time)
 
     # initial tagging model
     tag_model = Tagging(config.tagging_size, config.hashtag_num, config.embed_size)
@@ -246,6 +247,7 @@ if __name__ == '__main__':
 
         # after train, we should choose the best one as the presentation model
         # train tagging model
+
         train_tagging_model(config, helper, moon, tag_model, mdataset)
         print("----------------------------------------")
 
